@@ -83,7 +83,7 @@ WAsum$condition <- factor(WAsum$condition)
 ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
   geom_bar(position = position_dodge(), stat = "identity") +
   geom_errorbar(aes(ymin = SemDis_MEAN - se, ymax = SemDis_MEAN + se), width = .2, position = position_dodge(.9)) +
-  geom_signif()
+  coord_cartesian(ylim = c(.6, .9)) +
   theme_bw()
 
 
