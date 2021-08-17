@@ -73,9 +73,9 @@ means <- WA.SemDis.complete %>%
             se = sqrt(var(SemDis_MEAN)/length(SemDis_MEAN)))
 
 WA.SemDis.aov <- aov(SemDis_MEAN ~ group + condition + group*condition, data = WA.SemDis.complete)
-Anova(WA.SemDis.aov, type = "III")
-TukeyHSD(WA.SemDis.aov, which = 'group:condition')
-compare_means(SemDis_MEAN ~ condition, data = WA.SemDis.complete, group.by = "group")
+WA.Anova <- Anova(WA.SemDis.aov, type = "III")
+WA.Tukey <- TukeyHSD(WA.SemDis.aov, which = 'group:condition')
+compareMeans <- compare_means(SemDis_MEAN ~ condition, data = WA.SemDis.complete, group.by = "group")
 
 #plot that thing
 WAsum <- summarySE(WA.SemDis.complete, measurevar = "SemDis_MEAN", groupvars = c("group", "condition"))
@@ -84,6 +84,7 @@ ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
   geom_bar(position = position_dodge(), stat = "identity") +
   geom_errorbar(aes(ymin = SemDis_MEAN - se, ymax = SemDis_MEAN + se), width = .2, position = position_dodge(.9)) +
   coord_cartesian(ylim = c(.6, .9)) +
-  theme_bw()
+  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + labs(fill = "Group")
+  
 
 
