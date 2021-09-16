@@ -71,12 +71,34 @@ means <- WA.SemDis.complete %>%
   summarize(count = n(),
     mean = mean(SemDis_MEAN),
             se = sqrt(var(SemDis_MEAN)/length(SemDis_MEAN)))
+#ope we failed levene's test
+leveneTest(SemDis_MEAN ~ group*condition, data = WA.SemDis.complete)
 
+#two way anova
 WA.SemDis.aov <- aov(SemDis_MEAN ~ group + condition + group*condition, data = WA.SemDis.complete)
 WA.Anova <- Anova(WA.SemDis.aov, type = "III")
 WA.Tukey <- TukeyHSD(WA.SemDis.aov, which = 'group:condition')
 compareMeans <- compare_means(SemDis_MEAN ~ condition, data = WA.SemDis.complete, group.by = "group")
 
+#normality? YES
+resid <- WA.SemDis.aov$residuals
+
+#mixed effects model
+library(nlme)
+
+#robust aov
+library(WRS2)
+WA.SemDis.complete <- WA.SemDis.complete %>% group_by(group, condition)
+WA.SemDis.complete$group <- factor(WA.SemDis.complete$group)
+WA.SemDis.complete$condition <- factor(WA.SemDis.complete$condition)
+WA_robust <- t2way(SemDis_MEAN ~ group * condition, WA.SemDis.complete, tr = 0.2)
+postBigC <- mcp2atm(SemDis_MEAN ~ group * condition, data = WA.SemDis.complete)
+
+#effect sizes and adjust p
+t1way(SemDis_MEAN ~ group, WA.SemDis.complete, tr = 0.2)
+p.adjust(WA_robust$A.p.value, "bonferroni", n = length(WA_robust$A.p.value))
+t1way(SemDis_MEAN ~ condition, WA.SemDis.complete, tr = 0.2)
+p.adjust(WA_robust$B.p.value, "bonferroni", n = length(WA_robust$B.p.value))
 #plot that thing
 WAsum <- summarySE(WA.SemDis.complete, measurevar = "SemDis_MEAN", groupvars = c("group", "condition"))
 WAsum$condition <- factor(WAsum$condition)
@@ -84,7 +106,11 @@ ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
   geom_bar(position = position_dodge(), stat = "identity") +
   geom_errorbar(aes(ymin = SemDis_MEAN - se, ymax = SemDis_MEAN + se), width = .2, position = position_dodge(.9)) +
   coord_cartesian(ylim = c(.6, .9)) +
-  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + labs(fill = "Group")
-  
+  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + labs(fill = "Group") +
+  theme(text = element_text(size = 20))
 
+#dists  
+ggplot(WA.SemDis.complete, aes(x = SemDis_MEAN)) +
+  geom_histogram(aes(color = group, fill = group)) +
+  facet_wrap(~condition)
 
