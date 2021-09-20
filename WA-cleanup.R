@@ -117,12 +117,12 @@ library(wesanderson)
 cond_dist <- ggplot(WA.SemDis.complete, aes(x = condition, y = SemDis_MEAN)) +
   geom_boxplot(aes(fill = condition)) +
   scale_fill_manual(values = wes_palette("FantasticFox1")) +
-  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.25))
+  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.4))
   
 group_dist <- ggplot(WA.SemDis.complete, aes(x = group, y = SemDis_MEAN)) +
   geom_boxplot(aes(fill = group)) +
   scale_fill_manual(values = wes_palette("GrandBudapest2")) +
-  theme_bw() + xlab("Group") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.25))
+  theme_bw() + xlab("Group") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.4))
 
 figure1ab <- ggarrange(cond_dist, group_dist, 
                      labels = c("A", "B"),
