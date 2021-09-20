@@ -71,6 +71,7 @@ means <- WA.SemDis.complete %>%
   summarize(count = n(),
     mean = mean(SemDis_MEAN),
             se = sqrt(var(SemDis_MEAN)/length(SemDis_MEAN)))
+
 #ope we failed levene's test
 leveneTest(SemDis_MEAN ~ group*condition, data = WA.SemDis.complete)
 
@@ -99,15 +100,33 @@ t1way(SemDis_MEAN ~ group, WA.SemDis.complete, tr = 0.2)
 p.adjust(WA_robust$A.p.value, "bonferroni", n = length(WA_robust$A.p.value))
 t1way(SemDis_MEAN ~ condition, WA.SemDis.complete, tr = 0.2)
 p.adjust(WA_robust$B.p.value, "bonferroni", n = length(WA_robust$B.p.value))
-#plot that thing
+
+#Figure 2
 WAsum <- summarySE(WA.SemDis.complete, measurevar = "SemDis_MEAN", groupvars = c("group", "condition"))
 WAsum$condition <- factor(WAsum$condition)
-ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
+figure2 <- ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
   geom_bar(position = position_dodge(), stat = "identity") +
   geom_errorbar(aes(ymin = SemDis_MEAN - se, ymax = SemDis_MEAN + se), width = .2, position = position_dodge(.9)) +
   coord_cartesian(ylim = c(.6, .9)) +
   theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + labs(fill = "Group") +
   theme(text = element_text(size = 20))
+
+#Figure 1 a and b
+library(wesanderson)
+
+cond_dist <- ggplot(WA.SemDis.complete, aes(x = condition, y = SemDis_MEAN)) +
+  geom_boxplot(aes(fill = condition)) +
+  scale_fill_manual(values = wes_palette("FantasticFox1")) +
+  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.25))
+  
+group_dist <- ggplot(WA.SemDis.complete, aes(x = group, y = SemDis_MEAN)) +
+  geom_boxplot(aes(fill = group)) +
+  scale_fill_manual(values = wes_palette("GrandBudapest2")) +
+  theme_bw() + xlab("Group") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.25))
+
+figure1ab <- ggarrange(cond_dist, group_dist, 
+                     labels = c("A", "B"),
+                     ncol = 1, nrow = 2)
 
 #dists  
 ggplot(WA.SemDis.complete, aes(x = SemDis_MEAN)) +
