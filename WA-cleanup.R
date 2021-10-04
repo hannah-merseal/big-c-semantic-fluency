@@ -97,9 +97,16 @@ postBigC <- mcp2atm(SemDis_MEAN ~ group * condition, data = WA.SemDis.complete)
 
 #effect sizes and adjust p
 t1way(SemDis_MEAN ~ group, WA.SemDis.complete, tr = 0.2)
+lincon(SemDis_MEAN ~ group, WA.SemDis.complete, tr = 0.2)
 p.adjust(WA_robust$A.p.value, "bonferroni", n = length(WA_robust$A.p.value))
+
 t1way(SemDis_MEAN ~ condition, WA.SemDis.complete, tr = 0.2)
+lincon(SemDis_MEAN ~ condition, WA.SemDis.complete, tr = 0.2)
 p.adjust(WA_robust$B.p.value, "bonferroni", n = length(WA_robust$B.p.value))
+
+#post hoc main effects
+postCommon <- subset(WA.SemDis.complete, condition == 'common')
+t1way(SemDis_MEAN ~ group, postCommon, tr = 0.2)
 
 #Figure 2
 WAsum <- summarySE(WA.SemDis.complete, measurevar = "SemDis_MEAN", groupvars = c("group", "condition"))
@@ -115,14 +122,26 @@ figure2 <- ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
 library(wesanderson)
 
 cond_dist <- ggplot(WA.SemDis.complete, aes(x = condition, y = SemDis_MEAN)) +
-  geom_boxplot(aes(fill = condition)) +
+  geom_violin(aes(fill = condition)) +
+  geom_boxplot(width = .1, fill = "black", outlier.color = NA) +
+  stat_summary(fun.y = median, geom = "point", fill = "white", shape = 21, size = 2.5) +
   scale_fill_manual(values = wes_palette("FantasticFox1")) +
-  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.4))
+  theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + 
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(size = 18),
+        legend.position = "none") + 
+  coord_cartesian(ylim = c(0, 1.4))
   
 group_dist <- ggplot(WA.SemDis.complete, aes(x = group, y = SemDis_MEAN)) +
-  geom_boxplot(aes(fill = group)) +
+  geom_violin(aes(fill = group)) +
+  geom_boxplot(width = .1, fill = "black", outlier.color = NA) +
+  stat_summary(fun.y = median, geom = "point", fill = "white", shape = 21, size = 2.5) +
   scale_fill_manual(values = wes_palette("GrandBudapest2")) +
-  theme_bw() + xlab("Group") + ylab("Mean SemDis Score") + theme(legend.position = "none") + coord_cartesian(ylim = c(0, 1.4))
+  theme_bw() + xlab("Group") + ylab("Mean SemDis Score") + 
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(size = 18), 
+        legend.position = "none") + 
+  coord_cartesian(ylim = c(0, 1.4))
 
 figure1ab <- ggarrange(cond_dist, group_dist, 
                      labels = c("A", "B"),
@@ -133,3 +152,5 @@ ggplot(WA.SemDis.complete, aes(x = SemDis_MEAN)) +
   geom_histogram(aes(color = group, fill = group)) +
   facet_wrap(~condition)
 
+#level counts
+nlevels(as.factor(WA.SemDis.complete$id))
