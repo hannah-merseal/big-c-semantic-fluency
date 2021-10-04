@@ -6,6 +6,9 @@ library(ggpubr)
 library(rstatix)
 source("summarySE.R")
 library(ggsignif)
+library(nlme)
+library(WRS2)
+library(wesanderson)
 
 common.artists <- read_xlsx('association/common/data/BIGC WA_COMMON_visual artists.xlsx')
 common.scientists <- read_xlsx('association/common/data/BIGC WA_COMMON_scientists.xlsx')
@@ -84,11 +87,7 @@ compareMeans <- compare_means(SemDis_MEAN ~ condition, data = WA.SemDis.complete
 #normality? YES
 resid <- WA.SemDis.aov$residuals
 
-#mixed effects model
-library(nlme)
-
-#robust aov
-library(WRS2)
+#ROBUST#
 WA.SemDis.complete <- WA.SemDis.complete %>% group_by(group, condition)
 WA.SemDis.complete$group <- factor(WA.SemDis.complete$group)
 WA.SemDis.complete$condition <- factor(WA.SemDis.complete$condition)
@@ -104,9 +103,18 @@ t1way(SemDis_MEAN ~ condition, WA.SemDis.complete, tr = 0.2)
 lincon(SemDis_MEAN ~ condition, WA.SemDis.complete, tr = 0.2)
 p.adjust(WA_robust$B.p.value, "bonferroni", n = length(WA_robust$B.p.value))
 
-#post hoc main effects
+#post hoc intx effects
 postCommon <- subset(WA.SemDis.complete, condition == 'common')
 t1way(SemDis_MEAN ~ group, postCommon, tr = 0.2)
+lincon(SemDis_MEAN ~ group, postCommon, tr = 0.2)
+
+postUncommon <- subset(WA.SemDis.complete, condition == 'uncommon')
+t1way(SemDis_MEAN ~ group, postUncommon, tr = 0.2)
+lincon(SemDis_MEAN ~ group, postUncommon, tr = 0.2)
+
+postFree <- subset(WA.SemDis.complete, condition == 'free')
+t1way(SemDis_MEAN ~ group, postFree, tr = 0.2)
+lincon(SemDis_MEAN ~ group, postFree, tr = 0.2)
 
 #Figure 2
 WAsum <- summarySE(WA.SemDis.complete, measurevar = "SemDis_MEAN", groupvars = c("group", "condition"))
@@ -119,7 +127,6 @@ figure2 <- ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
   theme(text = element_text(size = 20))
 
 #Figure 1 a and b
-library(wesanderson)
 
 cond_dist <- ggplot(WA.SemDis.complete, aes(x = condition, y = SemDis_MEAN)) +
   geom_violin(aes(fill = condition)) +
