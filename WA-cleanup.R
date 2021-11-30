@@ -7,63 +7,25 @@ library(rstatix)
 source("summarySE.R")
 library(ggsignif)
 library(nlme)
-library(WRS2)
 library(wesanderson)
+library(dplyr)
+library(WRS2)
 
-common.artists <- read_xlsx('association/common/data/BIGC WA_COMMON_visual artists.xlsx')
-common.scientists <- read_xlsx('association/common/data/BIGC WA_COMMON_scientists.xlsx')
-common.control <- read_xlsx('association/common/data/BIGC WA_COMMON_comparison.xlsx')
+common <- read.csv('association/FROM-KENDRA/BIGC-COMMON-FROMKENDRA.csv')
+free <- read.csv('association/FROM-KENDRA/BIGC-FREE-FROMKENDRA.csv')
+uncommon <- read.csv('association/FROM-KENDRA/BIGC-UNCOMMON-FROMKENDRA.csv')
 
-free.artists <- read_xlsx('association/free response/data/BIGC WA_FREE RESPONSE_visual artists.xlsx')
-free.scientists <- read_xlsx('association/free response/data/BIGC WA_FREE RESPONSE_scientists.xlsx')
-free.control <- read_xlsx('association/free response/data/BIGC WA_FREE RESPONSE_comparisons.xlsx')
-
-uncommon.artists <- read_xlsx('association/individual/BIGC WA_INDIVIDUAL_visual artists.xlsx')
-uncommon.scientists <- read_xlsx('association/individual/BIGC WA_INDIVIDUAL_scientists.xlsx')
-uncommon.control <- read_xlsx('association/individual/BIGC WA_INDIVIDUAL_comparisons.xlsx')
-
-common.artists <- common.artists %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID) 
-common.scientists <- common.scientists %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-common.control <- common.control %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-
-uncommon.artists <- uncommon.artists %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-uncommon.scientists <- uncommon.scientists %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-uncommon.control <- uncommon.control %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-
-free.artists <- free.artists %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-free.scientists <- free.scientists %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-free.control <- free.control %>% gather(item, response, FORK:RAVEN) %>%
-  rename(id = PTID)
-
-common.artists <- common.artists %>% mutate(group = 'artists', condition = 'common')
-common.scientists <- common.scientists %>% mutate(group = 'scientists', condition = 'common')
-common.control <- common.control %>% mutate(group = 'control', condition = 'common')
-
-uncommon.artists <- uncommon.artists %>% mutate(group = 'artists', condition = 'uncommon')
-uncommon.scientists <- uncommon.scientists %>% mutate(group = 'scientists', condition = 'uncommon')
-uncommon.control <- uncommon.control %>% mutate(group = 'control', condition = 'uncommon')
-
-free.artists <- free.artists %>% mutate(group = 'artists', condition = 'free')
-free.scientists <- free.scientists %>% mutate(group = 'scientists', condition = 'free')
-free.control <- free.control %>% mutate(group = 'control', condition = 'free')
+common <- common %>% mutate(condition = 'common') %>% gather(item, response, FORK:RAVEN)
+free <- free %>% mutate(condition = 'free') %>% gather(item, response, FORK:RAVEN)
+uncommon <- uncommon %>% mutate(condition = 'uncommon') %>% gather(item, response, FORK:RAVEN)
 
 #merge
-bigC.WA <- Reduce(function(x, y) merge(x, y, all = TRUE), list(common.artists, common.control, common.scientists, 
-     free.artists, free.control, free.scientists, 
-     uncommon.artists, uncommon.control, uncommon.scientists))
+bigC.WA <- Reduce(function(x, y) merge(x, y, all = TRUE), list(common, uncommon, free))
 
 #save
-write.csv(bigC.WA, file = "association/bigC_WA_ALL.csv")
+write.csv(bigC.WA, file = "association/bigC_WA_ALL_FROMKENDRA.csv")
 
-WA.SemDis <- read.csv("WA_SemDis.csv")
+WA.SemDis <- read.csv("WA_SemDis_FROMKENDRA.csv")
 WA.SemDis.lm <- lm(SemDis_MEAN ~ group + condition + group*condition, WA.SemDis)
 mcSummary(WA.SemDis.lm)
 
@@ -73,6 +35,18 @@ means <- WA.SemDis.complete %>%
   group_by(group, condition) %>%
   summarize(count = n(),
     mean = mean(SemDis_MEAN),
+            se = sqrt(var(SemDis_MEAN)/length(SemDis_MEAN)))
+
+meansCond <- WA.SemDis.complete %>%
+  group_by(condition) %>%
+  summarize(count = n(),
+            mean = mean(SemDis_MEAN),
+            se = sqrt(var(SemDis_MEAN)/length(SemDis_MEAN)))
+
+meansGroup <- WA.SemDis.complete %>%
+  group_by(group) %>%
+  summarize(count = n(),
+            mean = mean(SemDis_MEAN),
             se = sqrt(var(SemDis_MEAN)/length(SemDis_MEAN)))
 
 #ope we failed levene's test
@@ -128,27 +102,31 @@ figure2 <- ggplot(WAsum, aes(x = condition, y = SemDis_MEAN, fill = group)) +
 
 #Figure 1 a and b
 
+oldvals <- c("artists", "control", "scientists")
+newvals <- factor(c("VIS", "SCG", "SCI"))
+WA.SemDis.complete$group <- newvals[ match(WA.SemDis.complete$group, oldvals)]
+
 cond_dist <- ggplot(WA.SemDis.complete, aes(x = condition, y = SemDis_MEAN)) +
   geom_violin(aes(fill = condition)) +
-  geom_boxplot(width = .1, fill = "black", outlier.color = NA) +
-  stat_summary(fun.y = median, geom = "point", fill = "white", shape = 21, size = 2.5) +
+  geom_boxplot(width = .1, fill = "white", outlier.color = NA) +
+  stat_summary(fun.y = median, geom = "point", fill = "black", shape = 21, size = 2.5) +
   scale_fill_manual(values = wes_palette("FantasticFox1")) +
   theme_bw() + xlab("Condition") + ylab("Mean SemDis Score") + 
   theme(text = element_text(size = 20),
         axis.text.x = element_text(size = 18),
         legend.position = "none") + 
-  coord_cartesian(ylim = c(0, 1.4))
-  
+  coord_cartesian(ylim = c(0, 1.1))
+
 group_dist <- ggplot(WA.SemDis.complete, aes(x = group, y = SemDis_MEAN)) +
   geom_violin(aes(fill = group)) +
-  geom_boxplot(width = .1, fill = "black", outlier.color = NA) +
-  stat_summary(fun.y = median, geom = "point", fill = "white", shape = 21, size = 2.5) +
+  geom_boxplot(width = .1, fill = "white", outlier.color = NA) +
+  stat_summary(fun.y = median, geom = "point", fill = "black", shape = 21, size = 2.5) +
   scale_fill_manual(values = wes_palette("GrandBudapest2")) +
   theme_bw() + xlab("Group") + ylab("Mean SemDis Score") + 
   theme(text = element_text(size = 20),
         axis.text.x = element_text(size = 18), 
         legend.position = "none") + 
-  coord_cartesian(ylim = c(0, 1.4))
+  coord_cartesian(ylim = c(0, 1.1))
 
 figure1ab <- ggarrange(cond_dist, group_dist, 
                      labels = c("A", "B"),
